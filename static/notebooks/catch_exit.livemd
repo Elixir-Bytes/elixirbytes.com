@@ -1,0 +1,81 @@
+# Using catch_exit/1
+
+## Outline
+
+1. **Introduction**
+   * Brief overview of Elixir's testing capabilities.
+   * Introduction to the concept of process exits in Elixir.
+2. **Understanding catch_exit/1**
+   * Definition and purpose of catch_exit/1.
+   * How it differs from other test helpers.
+   * The importance of capturing exits in certain test scenarios.
+3. **Use Cases for catch_exit/1**
+   * Testing scenarios where processes are expected to exit.
+   * Ensuring that certain parts of the code handle exits gracefully.
+   * Validating that the correct exit signals are being sent.
+4. **Using catch_exit/1 in Acceptance Tests**
+   * Setting up the testing environment.
+   * Writing acceptance tests that utilize catch_exit/1.
+   * Interpreting the results and handling different exit signals.
+5. **Examples of catch_exit/1 in Action**
+   * **Example 1:** Testing a function that is expected to exit under certain conditions.
+     * Setting up the test.
+     * Writing the test using catch_exit/1.
+     * Analyzing the results.
+   * **Example 2:** Ensuring a supervised process exits as expected.
+     * Setting up the supervised process.
+     * Writing the test to capture the exit of the supervised process.
+     * Interpreting the results.
+   * **Example 3:** Validating that an external service or dependency causes the process to exit when unavailable.
+     * Mocking the external service.
+     * Writing the test to capture the exit when the service is unavailable.
+     * Analyzing the results.
+6. **Common Pitfalls and Best Practices**
+   * Avoiding over-reliance on catch_exit/1.
+   * Ensuring that tests remain clear and maintainable.
+   * Handling different types of exit signals appropriately.
+7. **Conclusion**
+   * Recap of the importance and utility of catch_exit/1 in Elixir acceptance tests.
+   * Encouragement to explore further and utilize catch_exit/1 effectively in various testing scenarios.
+
+## Exit in a child process
+
+```elixir
+defmodule Server do
+  use GenServer
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  @impl true
+  def init(opts) do
+    {:ok, opts, {:continue, :blow_it_up}}
+  end
+
+  @impl true
+  def handle_continue(:blow_it_up, state) do
+    if state[:should_blow_it_up] do
+      raise "Blow it up!"
+    end
+
+    {:noreply, state}
+  end
+end
+
+defmodule Runner do
+  def run(server_opts) do
+    Server.start_link(server_opts)
+  end
+end
+
+server_opts = [should_blow_it_up: true]
+Runner.run(server_opts)
+
+# try do
+#   Runner.run()
+# catch
+#   :exit, whatever ->
+#     whatever
+# end
+```
